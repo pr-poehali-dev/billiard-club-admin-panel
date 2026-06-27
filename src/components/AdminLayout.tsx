@@ -1,11 +1,14 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useAuth } from '@/context/AuthContext';
 
+const SETTINGS_API = 'https://functions.poehali.dev/9fdf6b1c-6a62-440a-ac17-588ebd59c90a';
+
 const navItems = [
   { to: '/', label: 'Настройки клуба', icon: 'Settings' },
-  { to: '/tables', label: 'Столы и брони', icon: 'CalendarCheck' },
+  { to: '/tables', label: 'Бронирование', icon: 'CalendarCheck' },
+  { to: '/statistics', label: 'Статистика', icon: 'BarChart3' },
   { to: '/table-settings', label: 'Настройки столов', icon: 'Grid3x3' },
 ];
 
@@ -19,10 +22,23 @@ interface AdminLayoutProps {
 const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) => {
   const { pathname } = useLocation();
   const { logout } = useAuth();
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(`${SETTINGS_API}?resource=balance`)
+      .then((r) => r.json())
+      .then((d) => setBalance(d.balance ?? 0))
+      .catch(() => {});
+  }, []);
+
+  const fmtBalance = (v: number) =>
+    v.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <aside className="lg:w-72 felt-texture text-primary-foreground p-6 lg:p-8 flex lg:flex-col gap-6 lg:gap-10 items-center lg:items-stretch justify-between lg:justify-start">
+      <aside className="lg:w-72 felt-texture text-primary-foreground p-6 lg:p-8 flex lg:flex-col gap-4 lg:gap-6 items-center lg:items-stretch justify-between lg:justify-start">
+
+        {/* Лого */}
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-primary-foreground/15 backdrop-blur flex items-center justify-center shrink-0">
             <Icon name="CircleDot" size={24} />
@@ -33,7 +49,20 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
           </div>
         </div>
 
-        <nav className="flex lg:flex-col gap-1 lg:gap-1 lg:mt-2 lg:flex-1">
+        {/* Баланс */}
+        <div className="hidden lg:block rounded-2xl bg-primary-foreground/10 border border-primary-foreground/15 px-4 py-3">
+          <p className="text-[11px] text-primary-foreground/50 uppercase tracking-widest mb-1 font-medium">Баланс клуба</p>
+          <p className="text-2xl font-bold tracking-tight">
+            {balance === null ? (
+              <span className="opacity-40 text-base">загрузка…</span>
+            ) : (
+              <>{fmtBalance(balance)} ₽</>
+            )}
+          </p>
+        </div>
+
+        {/* Навигация */}
+        <nav className="flex lg:flex-col gap-1 lg:gap-1 lg:flex-1">
           {navItems.map((item) => {
             const active = pathname === item.to;
             return (
@@ -53,9 +82,10 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
           })}
         </nav>
 
+        {/* Выход */}
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-primary-foreground/60 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all mt-auto"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-primary-foreground/60 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all"
         >
           <Icon name="LogOut" size={18} />
           <span className="hidden sm:inline">Выйти</span>

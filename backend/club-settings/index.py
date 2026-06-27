@@ -8,7 +8,7 @@ import boto3
 
 
 def handler(event: dict, context) -> dict:
-    '''Управление настройками клуба, столами и авторизацией'''
+    '''Управление настройками клуба, столами, авторизацией и статистикой'''
     method = event.get('httpMethod', 'GET')
 
     cors = {
@@ -34,10 +34,11 @@ def handler(event: dict, context) -> dict:
     def esc(v):
         return str(v).replace("'", "''")
 
+    qp = event.get('queryStringParameters') or {}
     body = json.loads(event.get('body') or '{}') if method != 'GET' else {}
-    resource = body.get('resource', 'settings')
+    resource = qp.get('resource') or body.get('resource', 'settings')
 
-    # ── AUTH ────────────────────────────────────────────────────────────────
+    # ── AUTH ─────────────────────────────────────────────────────────────────
     if resource == 'login':
         username = body.get('username', '').strip()
         password = body.get('password', '')
@@ -57,21 +58,55 @@ def handler(event: dict, context) -> dict:
         return ok({'success': True, 'username': username})
 
     # ── TABLES GET ───────────────────────────────────────────────────────────
-    if method == 'GET' or resource == 'tables':
-        qp = event.get('queryStringParameters') or {}
-        if qp.get('resource') == 'tables' or resource == 'tables':
-            cur.execute(
-                "SELECT id, name, table_type, size_ft, price_per_hour, sort_order "
-                "FROM billiard_tables ORDER BY sort_order, id"
-            )
-            rows = cur.fetchall()
-            cur.close(); conn.close()
-            return ok([{'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3], 'price_per_hour': r[4], 'sort_order': r[5]} for r in rows])
+    if resource == 'tables':
+        cur.execute(
+            "SELECT id, name, table_type, size_ft, price_per_hour, sort_order, model, description, controller_id "
+            "FROM billiard_tables ORDER BY sort_order, id"
+        )
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return ok([{
+            'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3],
+            'price_per_hour': r[4], 'sort_order': r[5],
+            'model': r[6], 'description': r[7], 'controller_id': r[8],
+        } for r in rows])
 
-        # ── CLUB SETTINGS GET ────────────────────────────────────────────────
+    # ── BALANCE GET ──────────────────────────────────────────────────────────
+    if resource == 'balance':
+        cur.execute("SELECT balance FROM club_settings WHERE id = 1")
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        return ok({'balance': float(row[0]) if row else 0})
+
+    # ── STATS GET ────────────────────────────────────────────────────────────
+    if resource == 'stats':
+        date_from = qp.get('from', '')
+        date_to = qp.get('to', '')
+        where = ''
+        if date_from and date_to:
+            where = f"WHERE booking_date >= '{esc(date_from)}' AND booking_date <= '{esc(date_to)}'"
+        elif date_from:
+            where = f"WHERE booking_date >= '{esc(date_from)}'"
+        cur.execute(
+            f"SELECT b.id, b.table_name, to_char(b.booking_date,'YYYY-MM-DD'), b.time_slot, "
+            f"b.client_name, b.status, b.payment_place, bt.price_per_hour "
+            f"FROM bookings b LEFT JOIN billiard_tables bt ON bt.id = b.table_id "
+            f"{where} ORDER BY b.booking_date DESC, b.time_slot DESC LIMIT 200"
+        )
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        items = [{
+            'id': r[0], 'table_name': r[1], 'date': r[2], 'time_slot': r[3],
+            'client_name': r[4], 'status': r[5], 'payment_place': r[6],
+            'price_per_hour': r[7] or 0,
+        } for r in rows]
+        return ok(items)
+
+    # ── CLUB SETTINGS GET ────────────────────────────────────────────────────
+    if method == 'GET':
         cur.execute(
             "SELECT name, description, address, phone, email, website, work_hours, "
-            "telegram, instagram, vk, max_messenger, photos FROM club_settings WHERE id = 1"
+            "telegram, instagram, vk, max_messenger, photos, balance FROM club_settings WHERE id = 1"
         )
         row = cur.fetchone()
         cur.close(); conn.close()
@@ -82,6 +117,7 @@ def handler(event: dict, context) -> dict:
             'email': row[4], 'website': row[5], 'work_hours': row[6],
             'telegram': row[7], 'instagram': row[8], 'vk': row[9], 'max_messenger': row[10],
             'photos': row[11] if row[11] else [],
+            'balance': float(row[12]) if row[12] else 0,
         })
 
     action = body.get('action', 'save')
@@ -99,9 +135,13 @@ def handler(event: dict, context) -> dict:
         table_type = esc(body.get('table_type', ''))
         size_ft = int(body.get('size_ft', 12))
         price = int(body.get('price_per_hour', 700))
+        model = esc(body.get('model', ''))
+        description = esc(body.get('description', ''))
+        controller_id = esc(body.get('controller_id', ''))
         cur.execute(
             f"UPDATE billiard_tables SET name='{name}', table_type='{table_type}', "
-            f"size_ft={size_ft}, price_per_hour={price} WHERE id={tid}"
+            f"size_ft={size_ft}, price_per_hour={price}, model='{model}', "
+            f"description='{description}', controller_id='{controller_id}' WHERE id={tid}"
         )
         cur.close(); conn.close()
         return ok({'success': True})
@@ -111,14 +151,22 @@ def handler(event: dict, context) -> dict:
         table_type = esc(body.get('table_type', 'Русская пирамида'))
         size_ft = int(body.get('size_ft', 12))
         price = int(body.get('price_per_hour', 700))
+        model = esc(body.get('model', ''))
+        description = esc(body.get('description', ''))
+        controller_id = esc(body.get('controller_id', ''))
         cur.execute(
-            f"INSERT INTO billiard_tables (name, table_type, size_ft, price_per_hour, sort_order) "
-            f"VALUES ('{name}', '{table_type}', {size_ft}, {price}, "
-            f"(SELECT COALESCE(MAX(sort_order),0)+1 FROM billiard_tables)) RETURNING id, name, table_type, size_ft, price_per_hour, sort_order"
+            f"INSERT INTO billiard_tables (name, table_type, size_ft, price_per_hour, model, description, controller_id, sort_order) "
+            f"VALUES ('{name}', '{table_type}', {size_ft}, {price}, '{model}', '{description}', '{controller_id}', "
+            f"(SELECT COALESCE(MAX(sort_order),0)+1 FROM billiard_tables)) "
+            f"RETURNING id, name, table_type, size_ft, price_per_hour, sort_order, model, description, controller_id"
         )
         r = cur.fetchone()
         cur.close(); conn.close()
-        return ok({'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3], 'price_per_hour': r[4], 'sort_order': r[5], 'success': True})
+        return ok({
+            'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3],
+            'price_per_hour': r[4], 'sort_order': r[5],
+            'model': r[6], 'description': r[7], 'controller_id': r[8], 'success': True,
+        })
 
     # ── PHOTO UPLOAD ─────────────────────────────────────────────────────────
     if action == 'upload_photo':

@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Tables from "./pages/Tables";
 import TableSettings from "./pages/TableSettings";
+import Statistics from "./pages/Statistics";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -20,6 +21,7 @@ const ProtectedRoutes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/tables" element={<Tables />} />
       <Route path="/table-settings" element={<TableSettings />} />
+      <Route path="/statistics" element={<Statistics />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

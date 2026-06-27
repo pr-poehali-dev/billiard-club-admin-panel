@@ -26,6 +26,7 @@ interface Booking {
   time_slot: string;
   client_name: string;
   status: string;
+  payment_place: string;
 }
 
 const timeSlots = ['10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30', '22:00'];
@@ -48,6 +49,7 @@ const Tables = () => {
   const [selectedDate, setSelectedDate] = useState<number>(0);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [clientName, setClientName] = useState('');
+  const [paymentPlace, setPaymentPlace] = useState<'В клубе' | 'Онлайн'>('В клубе');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [booking, setBooking] = useState(false);
 
@@ -92,6 +94,7 @@ const Tables = () => {
           time_slot: selectedSlot,
           client_name: clientName.trim() || 'Гость',
           status: 'Подтверждено',
+          payment_place: paymentPlace,
         }),
       });
       toast.success('Бронирование создано', {
@@ -99,6 +102,7 @@ const Tables = () => {
       });
       setSelectedSlot(null);
       setClientName('');
+      setPaymentPlace('В клубе');
       loadBookings();
     } catch {
       toast.error('Не удалось забронировать');
@@ -248,6 +252,22 @@ const Tables = () => {
                   placeholder="Имя гостя (необязательно)"
                   className="rounded-xl h-11"
                 />
+                <div className="flex gap-2">
+                  {(['В клубе', 'Онлайн'] as const).map((place) => (
+                    <button
+                      key={place}
+                      onClick={() => setPaymentPlace(place)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                        paymentPlace === place
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border/60 text-muted-foreground hover:border-primary/40'
+                      }`}
+                    >
+                      <Icon name={place === 'Онлайн' ? 'Smartphone' : 'Building2'} size={15} />
+                      {place}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex items-center justify-between">
                   {selectedSlot ? (
                     <p className="text-sm"><span className="text-muted-foreground">Выбрано:</span> <span className="font-semibold">{selectedSlot}</span></p>
@@ -294,6 +314,14 @@ const Tables = () => {
                   <p className="font-medium text-sm truncate">{b.table_name} · {b.client_name}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(b.date)}, {b.time_slot}</p>
                 </div>
+                <span className={`hidden sm:inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                  b.payment_place === 'Онлайн'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-accent text-accent-foreground border-border/40'
+                }`}>
+                  <Icon name={b.payment_place === 'Онлайн' ? 'Smartphone' : 'Building2'} size={11} />
+                  {b.payment_place || 'В клубе'}
+                </span>
                 <Badge variant={b.status === 'Подтверждено' ? 'default' : 'secondary'} className="rounded-full">
                   {b.status}
                 </Badge>
