@@ -1,30 +1,50 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Tables from "./pages/Tables";
+import TableSettings from "./pages/TableSettings";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoutes = () => {
+  const { isAuthed } = useAuth();
+  if (!isAuthed) return <Navigate to="/login" replace />;
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/tables" element={<Tables />} />
+      <Route path="/table-settings" element={<TableSettings />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/tables" element={<Tables />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginGuard />} />
+            <Route path="*" element={<ProtectedRoutes />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+const LoginGuard = () => {
+  const { isAuthed } = useAuth();
+  return isAuthed ? <Navigate to="/" replace /> : <Login />;
+};
 
 export default App;

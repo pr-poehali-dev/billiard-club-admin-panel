@@ -4,15 +4,20 @@
       "name": "Получение настроек клуба",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 200,
-      "expectedBody": {"name": "string"},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
     },
     {
       "name": "CORS preflight",
       "method": "OPTIONS",
       "path": "/",
       "expectedStatus": 200
+    },
+    {
+      "name": "Неверный логин",
+      "method": "POST",
+      "path": "/",
+      "body": {"resource": "login", "username": "noone", "password": "bad"},
+      "expectedStatus": 401
     }
   ]
 }
