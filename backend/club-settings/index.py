@@ -71,9 +71,15 @@ def handler(event: dict, context) -> dict:
             'model': r[6], 'description': r[7], 'controller_id': r[8],
         } for r in rows])
 
-    # ── BALANCE GET ──────────────────────────────────────────────────────────
+    # ── BALANCE GET — выручка онлайн-платежей за сегодня ─────────────────────
     if resource == 'balance':
-        cur.execute("SELECT balance FROM club_settings WHERE id = 1")
+        cur.execute(
+            "SELECT COALESCE(SUM(bt.price_per_hour), 0) "
+            "FROM bookings b "
+            "LEFT JOIN billiard_tables bt ON bt.id = b.table_id "
+            "WHERE b.payment_place = 'Онлайн' "
+            "AND b.booking_date = CURRENT_DATE"
+        )
         row = cur.fetchone()
         cur.close(); conn.close()
         return ok({'balance': float(row[0]) if row else 0})

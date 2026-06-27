@@ -51,7 +51,9 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
 
         {/* Баланс */}
         <div className="hidden lg:block rounded-2xl bg-primary-foreground/10 border border-primary-foreground/15 px-4 py-3">
-          <p className="text-[11px] text-primary-foreground/50 uppercase tracking-widest mb-1 font-medium">Баланс клуба</p>
+          <p className="text-[11px] text-primary-foreground/50 uppercase tracking-widest mb-1 font-medium flex items-center gap-1.5">
+            <Icon name="Smartphone" size={11} /> Онлайн сегодня
+          </p>
           <p className="text-2xl font-bold tracking-tight">
             {balance === null ? (
               <span className="opacity-40 text-base">загрузка…</span>
