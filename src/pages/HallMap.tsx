@@ -46,14 +46,18 @@ export default function HallMap() {
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [selected, setSelected] = useState<number | null>(null);
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch(`${API}?resource=hall_map`)
       .then((r) => r.json())
-      .then((data: TableData[]) => {
-        setTables(data);
-        const withPos = data
+      .then((data: { tables: TableData[]; bg: string | null }) => {
+        setTables(data.tables);
+        setBgUrl(data.bg);
+        const withPos = data.tables
           .filter((t) => t.hall_x !== null && t.hall_y !== null)
           .map((t) => ({
             ...t,
@@ -65,6 +69,42 @@ export default function HallMap() {
       })
       .catch(() => toast.error("Ошибка загрузки столов"));
   }, []);
+
+  const uploadBg = async (file: File) => {
+    setUploadingBg(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const b64 = e.target?.result as string;
+        const res = await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "upload_hall_bg",
+            file: b64,
+            contentType: file.type,
+          }),
+        });
+        const json = await res.json();
+        setBgUrl(json.url);
+        toast.success("Фон загружен");
+        setUploadingBg(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Ошибка загрузки фона");
+      setUploadingBg(false);
+    }
+  };
+
+  const removeBg = async () => {
+    setBgUrl(null);
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear_hall_bg" }),
+    }).catch(() => {});
+  };
 
   const unplaced = tables.filter((t) => !placed.some((p) => p.id === t.id));
 
@@ -172,19 +212,34 @@ export default function HallMap() {
       title="Схема зала"
       subtitle="Разместите столы на плане бильярдного клуба"
       actions={
-        <Button
-          onClick={save}
-          disabled={saving}
-          size="lg"
-          className="rounded-xl gap-2"
-        >
-          <Icon
-            name={saving ? "Loader2" : "Save"}
-            size={18}
-            className={saving ? "animate-spin" : ""}
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && uploadBg(e.target.files[0])}
           />
-          Сохранить схему
-        </Button>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingBg}
+            size="lg"
+            variant="outline"
+            className="rounded-xl gap-2"
+          >
+            <Icon name={uploadingBg ? "Loader2" : "ImagePlus"} size={18} className={uploadingBg ? "animate-spin" : ""} />
+            {bgUrl ? "Заменить план" : "Загрузить план"}
+          </Button>
+          <Button
+            onClick={save}
+            disabled={saving}
+            size="lg"
+            className="rounded-xl gap-2"
+          >
+            <Icon name={saving ? "Loader2" : "Save"} size={18} className={saving ? "animate-spin" : ""} />
+            Сохранить схему
+          </Button>
+        </div>
       }
     >
       <div className="flex flex-col xl:flex-row gap-6">
@@ -192,16 +247,37 @@ export default function HallMap() {
         <div className="flex-1 min-w-0">
           <div
             ref={canvasRef}
-            className="relative w-full rounded-3xl border-2 border-dashed border-border/60 overflow-hidden select-none"
+            className="relative w-full rounded-3xl overflow-hidden select-none"
             style={{
               aspectRatio: "16/9",
-              background: "linear-gradient(135deg, #0f2419 0%, #1a3d2b 50%, #0f2419 100%)",
+              background: bgUrl
+                ? "#1a1a1a"
+                : "linear-gradient(135deg, #0f2419 0%, #1a3d2b 50%, #0f2419 100%)",
+              border: bgUrl ? "2px solid hsl(var(--border))" : "2px dashed hsl(var(--border) / 0.6)",
               cursor: dragging ? "grabbing" : "default",
             }}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
           >
+            {/* Фоновое изображение */}
+            {bgUrl && (
+              <>
+                <img
+                  src={bgUrl}
+                  alt="План зала"
+                  className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
+                  draggable={false}
+                />
+                <button
+                  onClick={removeBg}
+                  className="absolute top-3 right-3 z-20 bg-black/60 hover:bg-black/80 text-white rounded-xl px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <Icon name="X" size={12} /> Убрать фон
+                </button>
+              </>
+            )}
+
             {/* Сетка */}
             <svg
               className="absolute inset-0 w-full h-full opacity-10"

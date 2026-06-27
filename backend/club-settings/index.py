@@ -80,11 +80,16 @@ def handler(event: dict, context) -> dict:
             "FROM billiard_tables ORDER BY sort_order, id"
         )
         rows = cur.fetchall()
+        cur.execute("SELECT hall_map_bg FROM club_settings WHERE id = 1")
+        bg_row = cur.fetchone()
         cur.close(); conn.close()
-        return ok([{
-            'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3],
-            'price_per_hour': r[4], 'hall_x': r[5], 'hall_y': r[6], 'hall_rotation': r[7] or 0,
-        } for r in rows])
+        return ok({
+            'tables': [{
+                'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3],
+                'price_per_hour': r[4], 'hall_x': r[5], 'hall_y': r[6], 'hall_rotation': r[7] or 0,
+            } for r in rows],
+            'bg': bg_row[0] if bg_row else None,
+        })
 
     # ── BALANCE GET — выручка онлайн-платежей за сегодня ─────────────────────
     if resource == 'balance':
@@ -188,6 +193,31 @@ def handler(event: dict, context) -> dict:
             'price_per_hour': r[4], 'sort_order': r[5],
             'model': r[6], 'description': r[7], 'controller_id': r[8], 'success': True,
         })
+
+    # ── HALL MAP BG UPLOAD ───────────────────────────────────────────────────
+    if action == 'upload_hall_bg':
+        file_b64 = body.get('file', '')
+        content_type = body.get('contentType', 'image/png')
+        ext = content_type.split('/')[-1].replace('jpeg', 'jpg')
+        file_bytes = base64.b64decode(file_b64.split(',')[-1])
+        key = f"hall-map/bg_{uuid.uuid4().hex}.{ext}"
+        s3 = boto3.client(
+            's3',
+            endpoint_url='https://bucket.poehali.dev',
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+        )
+        s3.put_object(Bucket='files', Key=key, Body=file_bytes, ContentType=content_type)
+        url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+        cur.execute(f"UPDATE club_settings SET hall_map_bg = '{esc(url)}' WHERE id = 1")
+        cur.close(); conn.close()
+        return ok({'url': url})
+
+    # ── HALL MAP BG CLEAR ────────────────────────────────────────────────────
+    if action == 'clear_hall_bg':
+        cur.execute("UPDATE club_settings SET hall_map_bg = NULL WHERE id = 1")
+        cur.close(); conn.close()
+        return ok({'success': True})
 
     # ── HALL MAP SAVE ────────────────────────────────────────────────────────
     if action == 'save_hall_map':
