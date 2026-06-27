@@ -41,9 +41,9 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
         {/* Лого */}
         <div className="flex flex-col gap-1">
           <img
-            src="https://cdn.poehali.dev/projects/ebab8bd9-031b-48f4-a7d3-fccb5d4b6d46/bucket/43ff0e26-8714-43b3-a610-6b71758044c6.png"
+            src="https://cdn.poehali.dev/projects/ebab8bd9-031b-48f4-a7d3-fccb5d4b6d46/bucket/3cafc0df-c8ed-447c-9221-2af5234d84c1.png"
             alt="SmartBilliard"
-            className="hidden lg:block w-full max-w-[200px] object-contain brightness-0 invert"
+            className="hidden lg:block w-full max-w-[200px] object-contain"
           />
           <div className="lg:hidden w-11 h-11 rounded-2xl bg-primary-foreground/15 backdrop-blur flex items-center justify-center shrink-0">
             <Icon name="CircleDot" size={24} />

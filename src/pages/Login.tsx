@@ -41,8 +41,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-scale-in">
         <div className="mb-10 text-center">
-          <div className="w-16 h-16 rounded-3xl felt-texture flex items-center justify-center mx-auto mb-5 shadow-lg">
-            <Icon name="CircleDot" size={28} className="text-primary-foreground" />
+          <div className="felt-texture rounded-3xl px-8 py-5 inline-block mb-6 shadow-lg">
+            <img
+              src="https://cdn.poehali.dev/projects/ebab8bd9-031b-48f4-a7d3-fccb5d4b6d46/bucket/3cafc0df-c8ed-447c-9221-2af5234d84c1.png"
+              alt="SmartBilliard"
+              className="h-10 w-auto object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Добро пожаловать</h1>
           <p className="text-muted-foreground mt-2 text-sm">Войдите в панель администратора</p>
