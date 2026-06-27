@@ -28,7 +28,7 @@ const TABLE_COLORS: Record<string, string> = {
   "Пул": "#1a3d5c",
   "Снукер": "#5c1a1a",
   "Американский пул": "#3d1a5c",
-  "Карамболь": "#5c4a1a",
+  "Китайская восьмерка": "#5c4a1a",
 };
 
 const TABLE_W = 100;
