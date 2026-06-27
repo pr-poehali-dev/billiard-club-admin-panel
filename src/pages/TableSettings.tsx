@@ -49,6 +49,101 @@ const emptyNew = () => ({
   controller_id: "",
 });
 
+const EditForm = ({
+  data,
+  onChange,
+}: {
+  data: Partial<BilliardTable>;
+  onChange: <K extends keyof BilliardTable>(k: K, v: BilliardTable[K]) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="grid sm:grid-cols-2 gap-4">
+      <div className="space-y-1">
+        <Label className="text-xs">Название</Label>
+        <Input
+          value={data.name || ""}
+          onChange={(e) => onChange("name", e.target.value as BilliardTable["name"])}
+          className="rounded-xl h-10"
+          placeholder="Стол №1"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Модель стола</Label>
+        <Input
+          value={data.model || ""}
+          onChange={(e) => onChange("model", e.target.value as BilliardTable["model"])}
+          className="rounded-xl h-10"
+          placeholder="Ливерпуль-Клаб"
+        />
+      </div>
+    </div>
+    <div className="grid sm:grid-cols-3 gap-4">
+      <div className="space-y-1">
+        <Label className="text-xs">Тип игры</Label>
+        <Select
+          value={data.table_type}
+          onValueChange={(v) => onChange("table_type", v as BilliardTable["table_type"])}
+        >
+          <SelectTrigger className="rounded-xl h-10">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TABLE_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Размер (фт)</Label>
+        <Select
+          value={String(data.size_ft)}
+          onValueChange={(v) => onChange("size_ft", Number(v) as BilliardTable["size_ft"])}
+        >
+          <SelectTrigger className="rounded-xl h-10">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SIZES.map((s) => (
+              <SelectItem key={s} value={String(s)}>{s} фт</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Цена ₽/час</Label>
+        <Input
+          type="number"
+          value={data.price_per_hour || ""}
+          onChange={(e) => onChange("price_per_hour", Number(e.target.value) as BilliardTable["price_per_hour"])}
+          className="rounded-xl h-10"
+        />
+      </div>
+    </div>
+    <div className="grid sm:grid-cols-2 gap-4">
+      <div className="space-y-1">
+        <Label className="text-xs">ID контроллера</Label>
+        <Input
+          value={data.controller_id || ""}
+          onChange={(e) => onChange("controller_id", e.target.value as BilliardTable["controller_id"])}
+          className="rounded-xl h-10 font-mono"
+          placeholder="CTRL-001"
+        />
+      </div>
+      <div className="space-y-1 sm:row-span-2">
+        <Label className="text-xs">Описание</Label>
+        <Textarea
+          value={data.description || ""}
+          onChange={(e) => onChange("description", e.target.value as BilliardTable["description"])}
+          className="rounded-xl resize-none"
+          rows={3}
+          placeholder="Дополнительная информация о столе"
+        />
+      </div>
+    </div>
+  </div>
+);
+
 const TableSettings = () => {
   const [tables, setTables] = useState<BilliardTable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,131 +244,6 @@ const TableSettings = () => {
       setSaving(null);
     }
   };
-
-  const EditForm = ({
-    data,
-    onChange,
-  }: {
-    data: Partial<BilliardTable>;
-    onChange: <K extends keyof BilliardTable>(
-      k: K,
-      v: BilliardTable[K],
-    ) => void;
-  }) => (
-    <div className="space-y-4">
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label className="text-xs">Название</Label>
-          <Input
-            value={data.name || ""}
-            onChange={(e) =>
-              onChange("name", e.target.value as BilliardTable["name"])
-            }
-            className="rounded-xl h-10"
-            placeholder="Стол №1"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Модель стола</Label>
-          <Input
-            value={data.model || ""}
-            onChange={(e) =>
-              onChange("model", e.target.value as BilliardTable["model"])
-            }
-            className="rounded-xl h-10"
-            placeholder="Ливерпуль-Клаб"
-          />
-        </div>
-      </div>
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div className="space-y-1">
-          <Label className="text-xs">Тип игры</Label>
-          <Select
-            value={data.table_type}
-            onValueChange={(v) =>
-              onChange("table_type", v as BilliardTable["table_type"])
-            }
-          >
-            <SelectTrigger className="rounded-xl h-10">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TABLE_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Размер (фт)</Label>
-          <Select
-            value={String(data.size_ft)}
-            onValueChange={(v) =>
-              onChange("size_ft", Number(v) as BilliardTable["size_ft"])
-            }
-          >
-            <SelectTrigger className="rounded-xl h-10">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SIZES.map((s) => (
-                <SelectItem key={s} value={String(s)}>
-                  {s} фт
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Цена ₽/час</Label>
-          <Input
-            type="number"
-            value={data.price_per_hour || ""}
-            onChange={(e) =>
-              onChange(
-                "price_per_hour",
-                Number(e.target.value) as BilliardTable["price_per_hour"],
-              )
-            }
-            className="rounded-xl h-10"
-          />
-        </div>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label className="text-xs">ID контроллера</Label>
-          <Input
-            value={data.controller_id || ""}
-            onChange={(e) =>
-              onChange(
-                "controller_id",
-                e.target.value as BilliardTable["controller_id"],
-              )
-            }
-            className="rounded-xl h-10 font-mono"
-            placeholder="CTRL-001"
-          />
-        </div>
-        <div className="space-y-1 sm:row-span-2">
-          <Label className="text-xs">Описание</Label>
-          <Textarea
-            value={data.description || ""}
-            onChange={(e) =>
-              onChange(
-                "description",
-                e.target.value as BilliardTable["description"],
-              )
-            }
-            className="rounded-xl resize-none"
-            rows={3}
-            placeholder="Дополнительная информация о столе"
-          />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <AdminLayout
