@@ -10,6 +10,7 @@ const navItems = [
   { to: '/tables', label: 'Бронирование', icon: 'CalendarCheck' },
   { to: '/statistics', label: 'Статистика', icon: 'BarChart3' },
   { to: '/table-settings', label: 'Настройки столов', icon: 'Grid3x3' },
+  { to: '/hall-map', label: 'Схема зала', icon: 'Map' },
 ];
 
 interface AdminLayoutProps {

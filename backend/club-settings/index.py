@@ -60,7 +60,8 @@ def handler(event: dict, context) -> dict:
     # ── TABLES GET ───────────────────────────────────────────────────────────
     if resource == 'tables':
         cur.execute(
-            "SELECT id, name, table_type, size_ft, price_per_hour, sort_order, model, description, controller_id "
+            "SELECT id, name, table_type, size_ft, price_per_hour, sort_order, model, description, controller_id, "
+            "hall_x, hall_y, hall_rotation "
             "FROM billiard_tables ORDER BY sort_order, id"
         )
         rows = cur.fetchall()
@@ -69,6 +70,20 @@ def handler(event: dict, context) -> dict:
             'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3],
             'price_per_hour': r[4], 'sort_order': r[5],
             'model': r[6], 'description': r[7], 'controller_id': r[8],
+            'hall_x': r[9], 'hall_y': r[10], 'hall_rotation': r[11] or 0,
+        } for r in rows])
+
+    # ── HALL MAP GET ─────────────────────────────────────────────────────────
+    if resource == 'hall_map':
+        cur.execute(
+            "SELECT id, name, table_type, size_ft, price_per_hour, hall_x, hall_y, hall_rotation "
+            "FROM billiard_tables ORDER BY sort_order, id"
+        )
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return ok([{
+            'id': r[0], 'name': r[1], 'table_type': r[2], 'size_ft': r[3],
+            'price_per_hour': r[4], 'hall_x': r[5], 'hall_y': r[6], 'hall_rotation': r[7] or 0,
         } for r in rows])
 
     # ── BALANCE GET — выручка онлайн-платежей за сегодня ─────────────────────
@@ -173,6 +188,20 @@ def handler(event: dict, context) -> dict:
             'price_per_hour': r[4], 'sort_order': r[5],
             'model': r[6], 'description': r[7], 'controller_id': r[8], 'success': True,
         })
+
+    # ── HALL MAP SAVE ────────────────────────────────────────────────────────
+    if action == 'save_hall_map':
+        positions = body.get('positions', [])
+        for p in positions:
+            tid = int(p.get('id', 0))
+            x = float(p.get('x', 0))
+            y = float(p.get('y', 0))
+            rot = int(p.get('rotation', 0))
+            cur.execute(
+                f"UPDATE billiard_tables SET hall_x={x}, hall_y={y}, hall_rotation={rot} WHERE id={tid}"
+            )
+        cur.close(); conn.close()
+        return ok({'success': True})
 
     # ── PHOTO UPLOAD ─────────────────────────────────────────────────────────
     if action == 'upload_photo':
