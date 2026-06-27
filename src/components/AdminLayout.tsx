@@ -25,7 +25,7 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
             <Icon name="CircleDot" size={24} />
           </div>
           <div className="leading-tight hidden sm:block">
-            <p className="font-display text-2xl font-semibold tracking-wide">Кий&Лузы</p>
+            <p className="font-display text-2xl tracking-wide font-extrabold">SMARTBILLIARD</p>
             <p className="text-xs text-primary-foreground/60">Панель администратора</p>
           </div>
         </div>
