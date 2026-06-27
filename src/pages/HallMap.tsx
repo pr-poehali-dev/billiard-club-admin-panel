@@ -138,16 +138,13 @@ export default function HallMap() {
       const t = placed.find((p) => p.id === id);
       if (!t) return;
       const { w, h } = getTableSize(t.size_ft);
-      const isRotated = t.rotation % 180 !== 0;
-      const tw = isRotated ? h : w;
-      const th = isRotated ? w : h;
       const canvasW = rect.width;
       const canvasH = rect.height;
       const px = (t.x / 100) * canvasW;
       const py = (t.y / 100) * canvasH;
       setDragOffset({
-        x: e.clientX - rect.left - px - tw / 2,
-        y: e.clientY - rect.top - py - th / 2,
+        x: e.clientX - rect.left - px - w / 2,
+        y: e.clientY - rect.top - py - h / 2,
       });
       setDragging(id);
     },
@@ -163,15 +160,12 @@ export default function HallMap() {
       const t = placed.find((p) => p.id === dragging);
       if (!t) return;
       const { w, h } = getTableSize(t.size_ft);
-      const isRotated = t.rotation % 180 !== 0;
-      const tw = isRotated ? h : w;
-      const th = isRotated ? w : h;
-      const rawX = e.clientX - rect.left - dragOffset.x - tw / 2;
-      const rawY = e.clientY - rect.top - dragOffset.y - th / 2;
+      const rawX = e.clientX - rect.left - dragOffset.x - w / 2;
+      const rawY = e.clientY - rect.top - dragOffset.y - h / 2;
       const pct = (v: number, max: number, size: number) =>
         Math.max(0, Math.min(100 - (size / max) * 100, (v / max) * 100));
-      const x = pct(rawX, rect.width, tw);
-      const y = pct(rawY, rect.height, th);
+      const x = pct(rawX, rect.width, w);
+      const y = pct(rawY, rect.height, h);
       setPlaced((prev) =>
         prev.map((p) => (p.id === dragging ? { ...p, x, y } : p))
       );
@@ -301,9 +295,6 @@ export default function HallMap() {
             {/* Столы на схеме */}
             {placed.map((t) => {
               const { w, h } = getTableSize(t.size_ft);
-              const isRotated = t.rotation % 180 !== 0;
-              const tw = isRotated ? h : w;
-              const th = isRotated ? w : h;
               const color = TABLE_COLORS[t.table_type] || "#1a5c2e";
               const isSelected = selected === t.id;
               const isDragged = dragging === t.id;
@@ -315,8 +306,8 @@ export default function HallMap() {
                     position: "absolute",
                     left: `${t.x}%`,
                     top: `${t.y}%`,
-                    width: tw,
-                    height: th,
+                    width: w,
+                    height: h,
                     cursor: isDragged ? "grabbing" : "grab",
                     transform: `rotate(${t.rotation}deg)`,
                     transformOrigin: "center",
@@ -353,7 +344,6 @@ export default function HallMap() {
                         textAlign: "center",
                         lineHeight: 1.2,
                         padding: "0 4px",
-                        transform: `rotate(-${t.rotation}deg)`,
                       }}
                     >
                       {t.name}
@@ -362,7 +352,6 @@ export default function HallMap() {
                       style={{
                         color: "rgba(255,255,255,0.6)",
                         fontSize: 8,
-                        transform: `rotate(-${t.rotation}deg)`,
                       }}
                     >
                       {t.size_ft} фт
