@@ -91,6 +91,19 @@ def handler(event: dict, context) -> dict:
             'bg': bg_row[0] if bg_row else None,
         })
 
+    # ── REVENUE TODAY — выручка онлайн-платежей за сегодня ──────────────────
+    if resource == 'revenue_today':
+        cur.execute(
+            "SELECT COALESCE(SUM(bt.price_per_hour), 0) "
+            "FROM bookings b "
+            "LEFT JOIN billiard_tables bt ON bt.id = b.table_id "
+            "WHERE b.payment_place = 'Онлайн' "
+            "AND b.booking_date = CURRENT_DATE"
+        )
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        return ok({'balance': float(row[0]) if row else 0})
+
     # ── BALANCE GET — остаток и история транзакций ───────────────────────────
     if resource == 'balance':
         cur.execute(

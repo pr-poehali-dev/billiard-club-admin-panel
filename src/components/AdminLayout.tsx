@@ -28,7 +28,7 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
   const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${SETTINGS_API}?resource=balance`)
+    fetch(`${SETTINGS_API}?resource=revenue_today`)
       .then((r) => r.json())
       .then((d) => setBalance(d.balance ?? 0))
       .catch(() => {});
