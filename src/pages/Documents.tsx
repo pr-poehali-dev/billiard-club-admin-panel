@@ -260,20 +260,13 @@ export default function Documents() {
 
         {/* ── Документы ── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center mb-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl felt-texture flex items-center justify-center">
                 <Icon name="FileStack" size={16} className="text-primary-foreground" />
               </div>
               <h2 className="font-semibold text-lg">Платёжные документы</h2>
             </div>
-            <Button
-              onClick={() => setShowAddDoc(true)}
-              size="sm"
-              className="rounded-xl gap-2"
-            >
-              <Icon name="Plus" size={15} /> Добавить
-            </Button>
           </div>
 
           {/* Сводка */}
