@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 const API = 'https://functions.poehali.dev/9fdf6b1c-6a62-440a-ac17-588ebd59c90a';
@@ -45,6 +46,12 @@ interface Transaction {
   created_at: string;
 }
 
+const PLANS = [
+  { id: 'basic', name: 'Базовый', price: 3500, features: ['До 5 столов', 'Онлайн-бронирование', 'Статистика за месяц'] },
+  { id: 'extended', name: 'Расширенный', price: 7000, features: ['До 15 столов', 'Онлайн-бронирование', 'Статистика за год', 'Документы и чеки'] },
+  { id: 'maximum', name: 'Максимальный', price: 15000, features: ['Без ограничений', 'Онлайн-бронирование', 'Полная аналитика', 'Документы и чеки', 'Приоритетная поддержка'] },
+];
+
 const Index = () => {
   const [data, setData] = useState<ClubData>(emptyData);
   const [loading, setLoading] = useState(true);
@@ -53,6 +60,8 @@ const Index = () => {
   const fileInput = useRef<HTMLInputElement>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [planDialog, setPlanDialog] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState('basic');
 
   const loadBalance = () => {
     fetch(`${API}?resource=balance`)
@@ -271,7 +280,7 @@ const Index = () => {
             <div className="rounded-2xl bg-primary/5 border border-primary/15 px-5 py-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">Тарифный план</p>
-                <p className="font-bold text-base">Базовый</p>
+                <p className="font-bold text-base">{PLANS.find(p => p.id === currentPlan)?.name ?? 'Базовый'}</p>
               </div>
               <span className="text-[10px] font-semibold uppercase tracking-widest bg-primary/10 text-primary px-2.5 py-1 rounded-lg">Активен</span>
             </div>
@@ -306,13 +315,47 @@ const Index = () => {
               </div>
             )}
 
-            <Button variant="outline" className="w-full rounded-xl gap-2" onClick={() => window.open('https://poehali.dev/help', '_blank')}>
+            <Button variant="outline" className="w-full rounded-xl gap-2" onClick={() => setPlanDialog(true)}>
               <Icon name="ArrowRightLeft" size={16} />
               Сменить тариф
             </Button>
           </Card>
         </div>
       </div>
+
+      <Dialog open={planDialog} onOpenChange={setPlanDialog}>
+        <DialogContent className="max-w-2xl rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Выберите тарифный план</DialogTitle>
+          </DialogHeader>
+          <div className="grid sm:grid-cols-3 gap-4 pt-2">
+            {PLANS.map((plan) => {
+              const active = currentPlan === plan.id;
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => { setCurrentPlan(plan.id); setPlanDialog(false); toast.success(`Тариф «${plan.name}» выбран`); }}
+                  className={`text-left rounded-2xl border-2 p-5 transition-all ${active ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40 hover:bg-muted/40'}`}
+                >
+                  <p className="font-bold text-base mb-1">{plan.name}</p>
+                  <p className="text-2xl font-bold tracking-tight mb-3">{plan.price.toLocaleString('ru-RU')} <span className="text-base font-normal text-muted-foreground">₽/мес</span></p>
+                  <ul className="space-y-1.5">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Icon name="Check" size={14} className="text-primary shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {active && (
+                    <span className="mt-4 inline-block text-[10px] font-semibold uppercase tracking-widest bg-primary/10 text-primary px-2.5 py-1 rounded-lg">Текущий</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
