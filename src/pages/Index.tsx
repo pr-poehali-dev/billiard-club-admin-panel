@@ -215,28 +215,58 @@ const Index = () => {
           </Card>
         </div>
 
-        <Card className="p-7 rounded-3xl border-border/60 shadow-sm space-y-6 h-fit">
-          <div className="flex items-center gap-3 pb-2">
-            <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-accent-foreground">
-              <Icon name="AtSign" size={20} />
+        <div className="space-y-5">
+          <Card className="p-7 rounded-3xl border-border/60 shadow-sm space-y-6 h-fit">
+            <div className="flex items-center gap-3 pb-2">
+              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-accent-foreground">
+                <Icon name="AtSign" size={20} />
+              </div>
+              <h2 className="font-semibold text-lg">Соцсети</h2>
             </div>
-            <h2 className="font-semibold text-lg">Соцсети</h2>
-          </div>
-          {socialFields.map((s) => (
-            <div key={s.key} className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Icon name={s.icon} size={15} />
-                {s.label}
-              </Label>
-              <Input
-                value={data[s.key] as string}
-                placeholder={s.placeholder}
-                onChange={(e) => upd(s.key, e.target.value)}
-                className="rounded-xl h-11"
-              />
+            {socialFields.map((s) => (
+              <div key={s.key} className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Icon name={s.icon} size={15} />
+                  {s.label}
+                </Label>
+                <Input
+                  value={data[s.key] as string}
+                  placeholder={s.placeholder}
+                  onChange={(e) => upd(s.key, e.target.value)}
+                  className="rounded-xl h-11"
+                />
+              </div>
+            ))}
+          </Card>
+
+          <Card className="p-7 rounded-3xl border-border/60 shadow-sm space-y-5">
+            <div className="flex items-center gap-3 pb-1">
+              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-accent-foreground">
+                <Icon name="CreditCard" size={20} />
+              </div>
+              <h2 className="font-semibold text-lg">Подписка</h2>
             </div>
-          ))}
-        </Card>
+
+            <div className="rounded-2xl bg-primary/5 border border-primary/15 px-5 py-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">Тарифный план</p>
+                <p className="font-bold text-base">Базовый</p>
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-widest bg-primary/10 text-primary px-2.5 py-1 rounded-lg">Активен</span>
+            </div>
+
+            <div className="rounded-2xl bg-muted/50 border border-border/50 px-5 py-4">
+              <p className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">Баланс</p>
+              <p className="text-2xl font-bold tracking-tight">—</p>
+              <p className="text-xs text-muted-foreground mt-1">Данные загружаются из платёжной системы</p>
+            </div>
+
+            <Button variant="outline" className="w-full rounded-xl gap-2" onClick={() => window.open('https://poehali.dev/help', '_blank')}>
+              <Icon name="ArrowRightLeft" size={16} />
+              Сменить тариф
+            </Button>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   );
