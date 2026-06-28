@@ -11,6 +11,7 @@ const navItems = [
   { to: '/statistics', label: 'Статистика', icon: 'BarChart3' },
   { to: '/table-settings', label: 'Настройки столов', icon: 'Grid3x3' },
   { to: '/hall-map', label: 'Схема зала', icon: 'Map' },
+  { to: '/documents', label: 'Документы', icon: 'FileStack' },
 ];
 
 interface AdminLayoutProps {

@@ -128,6 +128,40 @@ def handler(event: dict, context) -> dict:
         } for r in rows]
         return ok(items)
 
+    # ── ORG REQUISITES GET ───────────────────────────────────────────────────
+    if resource == 'requisites':
+        cur.execute(
+            "SELECT org_full_name, org_inn, org_kpp, org_ogrn, org_legal_address, "
+            "org_bank_name, org_bik, org_account, org_corr_account, org_director "
+            "FROM club_settings WHERE id = 1"
+        )
+        r = cur.fetchone()
+        cur.close(); conn.close()
+        if not r:
+            return ok({})
+        return ok({
+            'org_full_name': r[0] or '', 'org_inn': r[1] or '', 'org_kpp': r[2] or '',
+            'org_ogrn': r[3] or '', 'org_legal_address': r[4] or '',
+            'org_bank_name': r[5] or '', 'org_bik': r[6] or '',
+            'org_account': r[7] or '', 'org_corr_account': r[8] or '', 'org_director': r[9] or '',
+        })
+
+    # ── DOCUMENTS GET ─────────────────────────────────────────────────────────
+    if resource == 'documents':
+        doc_type = qp.get('type', '')
+        where = f"WHERE doc_type = '{esc(doc_type)}'" if doc_type else ''
+        cur.execute(
+            f"SELECT id, doc_type, doc_number, to_char(doc_date,'YYYY-MM-DD'), amount, description, status, booking_id, to_char(created_at,'YYYY-MM-DD HH24:MI') "
+            f"FROM org_documents {where} ORDER BY created_at DESC LIMIT 200"
+        )
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return ok([{
+            'id': r[0], 'doc_type': r[1], 'doc_number': r[2], 'doc_date': r[3],
+            'amount': float(r[4] or 0), 'description': r[5] or '', 'status': r[6],
+            'booking_id': r[7], 'created_at': r[8],
+        } for r in rows])
+
     # ── CLUB SETTINGS GET ────────────────────────────────────────────────────
     if method == 'GET':
         cur.execute(
@@ -147,6 +181,41 @@ def handler(event: dict, context) -> dict:
         })
 
     action = body.get('action', 'save')
+
+    # ── REQUISITES SAVE ──────────────────────────────────────────────────────
+    if action == 'save_requisites':
+        fields = ['org_full_name','org_inn','org_kpp','org_ogrn','org_legal_address',
+                  'org_bank_name','org_bik','org_account','org_corr_account','org_director']
+        parts = ", ".join([f"{f} = '{esc(body.get(f, ''))}'" for f in fields])
+        cur.execute(f"UPDATE club_settings SET {parts} WHERE id = 1")
+        cur.close(); conn.close()
+        return ok({'success': True})
+
+    # ── DOCUMENT ADD ─────────────────────────────────────────────────────────
+    if action == 'add_document':
+        doc_type = esc(body.get('doc_type', 'receipt'))
+        doc_number = esc(body.get('doc_number', ''))
+        doc_date = esc(body.get('doc_date', ''))
+        amount = float(body.get('amount', 0))
+        description = esc(body.get('description', ''))
+        status = esc(body.get('status', 'issued'))
+        booking_id = body.get('booking_id')
+        bid = f"{int(booking_id)}" if booking_id else 'NULL'
+        cur.execute(
+            f"INSERT INTO org_documents (doc_type, doc_number, doc_date, amount, description, status, booking_id) "
+            f"VALUES ('{doc_type}', '{doc_number}', '{doc_date}', {amount}, '{description}', '{status}', {bid}) "
+            f"RETURNING id"
+        )
+        new_id = cur.fetchone()[0]
+        cur.close(); conn.close()
+        return ok({'success': True, 'id': new_id})
+
+    # ── DOCUMENT DELETE ───────────────────────────────────────────────────────
+    if action == 'delete_document':
+        did = int(body.get('id', 0))
+        cur.execute(f"DELETE FROM org_documents WHERE id = {did}")
+        cur.close(); conn.close()
+        return ok({'success': True})
 
     # ── TABLE CRUD ───────────────────────────────────────────────────────────
     if action == 'delete_table':
