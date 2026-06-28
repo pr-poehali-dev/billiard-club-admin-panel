@@ -5,13 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 
 const SETTINGS_API = 'https://functions.poehali.dev/9fdf6b1c-6a62-440a-ac17-588ebd59c90a';
 
-const navItems = [
+const navItems: { to: string; label: string; icon: string; soon?: boolean }[] = [
   { to: '/', label: 'Настройки клуба', icon: 'Settings' },
   { to: '/tables', label: 'Бронирование', icon: 'CalendarCheck' },
   { to: '/statistics', label: 'Статистика', icon: 'BarChart3' },
   { to: '/table-settings', label: 'Настройки столов', icon: 'Grid3x3' },
   { to: '/hall-map', label: 'Схема зала', icon: 'Map' },
   { to: '/documents', label: 'Документы', icon: 'FileStack' },
+  { to: '/integrations', label: 'Интеграции', icon: 'Plug', soon: true },
 ];
 
 interface AdminLayoutProps {
@@ -71,6 +72,18 @@ const AdminLayout = ({ children, title, subtitle, actions }: AdminLayoutProps) =
         <nav className="flex lg:flex-col gap-1 lg:gap-1 lg:flex-1">
           {navItems.map((item) => {
             const active = pathname === item.to;
+            if (item.soon) {
+              return (
+                <div
+                  key={item.to}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-primary-foreground/35 cursor-default select-none"
+                >
+                  <Icon name={item.icon} size={18} />
+                  <span className="hidden sm:inline flex-1">{item.label}</span>
+                  <span className="hidden sm:inline text-[10px] font-semibold uppercase tracking-widest bg-primary-foreground/10 text-primary-foreground/50 px-1.5 py-0.5 rounded-md">скоро</span>
+                </div>
+              );
+            }
             return (
               <Link
                 key={item.to}

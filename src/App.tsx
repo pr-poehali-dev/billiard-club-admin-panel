@@ -10,6 +10,7 @@ import TableSettings from "./pages/TableSettings";
 import Statistics from "./pages/Statistics";
 import HallMap from "./pages/HallMap";
 import Documents from "./pages/Documents";
+import Integrations from "./pages/Integrations";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const ProtectedRoutes = () => {
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/hall-map" element={<HallMap />} />
       <Route path="/documents" element={<Documents />} />
+      <Route path="/integrations" element={<Integrations />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
