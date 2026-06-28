@@ -91,18 +91,28 @@ def handler(event: dict, context) -> dict:
             'bg': bg_row[0] if bg_row else None,
         })
 
-    # ── BALANCE GET — выручка онлайн-платежей за сегодня ─────────────────────
+    # ── BALANCE GET — остаток и история транзакций ───────────────────────────
     if resource == 'balance':
         cur.execute(
-            "SELECT COALESCE(SUM(bt.price_per_hour), 0) "
-            "FROM bookings b "
-            "LEFT JOIN billiard_tables bt ON bt.id = b.table_id "
-            "WHERE b.payment_place = 'Онлайн' "
-            "AND b.booking_date = CURRENT_DATE"
+            "SELECT COALESCE(SUM(CASE WHEN type='credit' THEN amount ELSE -amount END), 0) "
+            "FROM balance_transactions"
         )
-        row = cur.fetchone()
+        balance_row = cur.fetchone()
+        cur.execute(
+            "SELECT id, amount, type, description, to_char(created_at, 'YYYY-MM-DD HH24:MI') "
+            "FROM balance_transactions ORDER BY created_at DESC LIMIT 20"
+        )
+        tx_rows = cur.fetchall()
         cur.close(); conn.close()
-        return ok({'balance': float(row[0]) if row else 0})
+        return ok({
+            'balance': float(balance_row[0]) if balance_row else 0,
+            'transactions': [{
+                'id': r[0], 'amount': float(r[1]), 'type': r[2],
+                'description': r[3] or '', 'created_at': r[4],
+            } for r in tx_rows],
+        })
+
+
 
     # ── STATS GET ────────────────────────────────────────────────────────────
     if resource == 'stats':
@@ -216,6 +226,19 @@ def handler(event: dict, context) -> dict:
         cur.execute(f"DELETE FROM org_documents WHERE id = {did}")
         cur.close(); conn.close()
         return ok({'success': True})
+
+    # ── TRANSACTION ADD ───────────────────────────────────────────────────────
+    if action == 'add_transaction':
+        amount = float(body.get('amount', 0))
+        tx_type = esc(body.get('type', 'credit'))
+        description = esc(body.get('description', ''))
+        cur.execute(
+            f"INSERT INTO balance_transactions (amount, type, description) "
+            f"VALUES ({amount}, '{tx_type}', '{description}') RETURNING id"
+        )
+        new_id = cur.fetchone()[0]
+        cur.close(); conn.close()
+        return ok({'success': True, 'id': new_id})
 
     # ── TABLE CRUD ───────────────────────────────────────────────────────────
     if action == 'delete_table':

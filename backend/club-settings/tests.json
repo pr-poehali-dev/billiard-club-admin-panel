@@ -18,6 +18,12 @@
       "path": "/",
       "body": {"resource": "login", "username": "noone", "password": "bad"},
       "expectedStatus": 401
+    },
+    {
+      "name": "Получение баланса и транзакций",
+      "method": "GET",
+      "path": "/?resource=balance",
+      "expectedStatus": 200
     }
   ]
 }

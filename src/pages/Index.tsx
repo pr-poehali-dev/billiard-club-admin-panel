@@ -37,12 +37,32 @@ const socialFields: { key: keyof ClubData; label: string; icon: string; placehol
   { key: 'vk', label: 'ВКонтакте', icon: 'Share2', placeholder: 'vk.com/...' },
 ];
 
+interface Transaction {
+  id: number;
+  amount: number;
+  type: 'credit' | 'debit';
+  description: string;
+  created_at: string;
+}
+
 const Index = () => {
   const [data, setData] = useState<ClubData>(emptyData);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const loadBalance = () => {
+    fetch(`${API}?resource=balance`)
+      .then((r) => r.json())
+      .then((d) => {
+        setBalance(d.balance ?? 0);
+        setTransactions(d.transactions ?? []);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     fetch(API)
@@ -50,6 +70,7 @@ const Index = () => {
       .then((d) => setData({ ...emptyData, ...d, photos: d.photos || [] }))
       .catch(() => toast.error('Не удалось загрузить данные'))
       .finally(() => setLoading(false));
+    loadBalance();
   }, []);
 
   const upd = (k: keyof ClubData, v: string) => setData((p) => ({ ...p, [k]: v }));
@@ -257,9 +278,33 @@ const Index = () => {
 
             <div className="rounded-2xl bg-muted/50 border border-border/50 px-5 py-4">
               <p className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">Баланс</p>
-              <p className="text-2xl font-bold tracking-tight">—</p>
-              <p className="text-xs text-muted-foreground mt-1">Данные загружаются из платёжной системы</p>
+              {balance === null ? (
+                <div className="flex items-center gap-2 py-1">
+                  <Icon name="Loader2" size={18} className="animate-spin text-muted-foreground" />
+                  <span className="text-muted-foreground text-sm">Загрузка…</span>
+                </div>
+              ) : (
+                <p className={`text-2xl font-bold tracking-tight ${balance < 0 ? 'text-destructive' : ''}`}>
+                  {balance.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
+                </p>
+              )}
             </div>
+
+            {transactions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground">Последние операции</p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {transactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between text-sm px-1">
+                      <span className="text-muted-foreground truncate flex-1 pr-2">{tx.description || (tx.type === 'credit' ? 'Пополнение' : 'Списание')}</span>
+                      <span className={`font-semibold shrink-0 ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
+                        {tx.type === 'credit' ? '+' : '−'}{tx.amount.toLocaleString('ru-RU')} ₽
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Button variant="outline" className="w-full rounded-xl gap-2" onClick={() => window.open('https://poehali.dev/help', '_blank')}>
               <Icon name="ArrowRightLeft" size={16} />
